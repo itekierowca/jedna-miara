@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Nadzór nad OSK — wielkopolskie, lubuskie, zachodniopomorskie</title>
+<title>Jedna miara</title>
 <style>
 :root{
   --paper:#EDEFEA; --card:#FFFFFF; --ink:#171A14; --ink2:#4C5247; --ink3:#767C6F;
@@ -84,6 +84,10 @@ footer{margin-top:40px;border-top:1px solid var(--rule);padding-top:14px;font-si
 
 .two{display:grid;grid-template-columns:1fr;gap:12px}
 @media(min-width:640px){.two{grid-template-columns:1fr 1fr}}
+.bl{color:var(--ink2);text-decoration:underline;text-underline-offset:2px}
+.bl:hover{color:var(--brick)}
+.bzg{margin-top:10px;padding-top:10px;border-top:1px solid var(--rule2)}
+.bzg a{color:var(--ink2)}
 .sz{font-size:11px;color:var(--ink3);border:1px solid var(--rule);padding:1px 6px;border-radius:2px;margin-left:6px;white-space:nowrap}
 .bar{height:6px;background:var(--rule2);position:relative;margin-top:4px;max-width:120px}
 .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--brick)}
@@ -135,8 +139,8 @@ body.noscroll{overflow:hidden}
 
 <header class="top">
   <div>
-    <h1>Nadzór nad ośrodkami szkolenia kierowców</h1>
-    <p class="sub">Wielkopolskie · lubuskie · zachodniopomorskie — plan kontroli, zawiadomienia i checklisty</p>
+    <h1>Jedna miara</h1>
+    <p class="sub">Ten sam wskaźnik dla każdego ośrodka w powiecie — plan kontroli, zawiadomienia i checklisty</p>
   </div>
   <span class="badge" id="scope"></span>
 </header>
@@ -172,10 +176,12 @@ body.noscroll{overflow:hidden}
   </aside>
 </div>
 
-<footer>Źródło: roczne zestawienie wyników egzaminów państwowych w podziale na WORD, ośrodek i instruktora oraz rejestr przedsiębiorców prowadzących OSK. Przypisanie do powiatu według kodu TERYT w numerze rejestrowym ośrodka.
-<b>Wskaźnik zastępczy.</b> Do czasu otrzymania danych z numerem podejścia pulpit liczy odsetek wyników pozytywnych ze wszystkich podejść do egzaminu praktycznego kat. B. Docelowo zastąpi go trafność egzaminu wewnętrznego: odsetek osób, które zdały za pierwszym podejściem.
-Rażące odstępstwo = wynik co najmniej 15 punktów procentowych od mediany ośrodków danego starostwa i jednocześnie statystycznie nieprzypadkowy (poziom 99%). Warunek statystyczny chroni małe ośrodki przed przypadkowym wynikiem. Ośrodki z mniej niż 10 egzaminami praktycznymi nie są oceniane.
-Sygnały są przesłanką do sprawdzenia dokumentacji, nie ustaleniem nieprawidłowości.</footer>
+<footer>Źródło: rekordy pojedynczych podejść do egzaminu państwowego oraz rejestr przedsiębiorców prowadzących OSK. Przypisanie do powiatu według kodu TERYT w numerze rejestrowym ośrodka.
+<b>Wskaźnik:</b> odsetek osób, które zdały za pierwszym podejściem, wśród wszystkich przystępujących po raz pierwszy. Kategoria B, część praktyczna. Wynik ośrodka przeliczany jest na przeciętny dla powiatu rozkład ośrodków egzaminowania, żeby nie obciążał szkół, których kursanci zdają w trudniejszym WORD.
+<b>Odstępstwo</b> = wynik niższy od mediany o co najmniej 15 punktów procentowych, przy minimum 10 egzaminach; rażące przy istotności 99%, wymagające wyjaśnienia przy 95% (test dwumianowy). Warunek statystyczny chroni małe ośrodki przed przypadkowym wynikiem. W powiatach, w których mniej niż pięć ośrodków ma dość egzaminów, punktem odniesienia jest mediana wojewódzka.
+Sygnały są przesłanką do sprawdzenia dokumentacji, nie ustaleniem nieprawidłowości.
+<span class="bzg" style="display:block"><b>Widzisz liczbę, która się nie zgadza?</b> Dane pochodzą z rejestrów i mogą zawierać błędy — każde zgłoszenie sprawdzamy i poprawiamy.
+<a class="bl" id="bladFoot" href="#">Zgłoś błąd w danych</a> lub napisz na <span class="mail">rafal.matuszak@kierowca.pl</span>.</span></footer>
 </div>
 
 
@@ -218,6 +224,25 @@ const KOR=o=>{const n=o[4]+o[5];return n>0&&Math.abs((o[7]||1)-1)>=0.03&&pc(o[4]
 function korOpis(o){const n=o[4]+o[5];if(!n||!KOR(o))return'';
   return ' Wynik surowy '+pc(o[4]/n)+' przeliczono na '+pc(RS(o))+', ponieważ kursanci tego ośrodka zdawali egzamin w ośrodkach egzaminowania o '+((o[7]>1)?'trudniejszym':'łagodniejszym')+' przeciętnym wyniku niż pozostali kursanci z powiatu (współczynnik '+String(o[7]).replace('.',',')+').';}
 const OK=(D.okres||{});
+/* ---------- zgłoszenie błędu w danych ---------- */
+const BLAD_MAIL='rafal.matuszak@kierowca.pl';
+function syncBlad(){const a=$('bladFoot');if(a)a.href=bladLink(curOsk)}
+function bladLink(o){
+  const t=o?('Jedna miara — błąd w danych: '+o[0]):'Jedna miara — zgłoszenie błędu w danych';
+  const n=o?(o[4]+o[5]):0;
+  const b=o
+   ? 'Zgłaszam nieprawidłowość w danych.\n\n'
+    +'Ośrodek: '+o[1]+'\nNumer rejestrowy: '+o[0]+'\nOrgan nadzoru: '+cur+'\n\n'
+    +'Co pokazuje aplikacja:\n'
+    +'- egzaminy kat. B, praktyka, pierwsze podejścia: '+o[4]+' zdanych z '+n+'\n'
+    +'- zdane egzaminy wszystkich kategorii w okresie: '+o[3]+'\n'
+    +'- kategorie wykazane w danych: '+(((D.meta[o[0]]||{}).kat)||[]).join(', ')+'\n'
+    +'- okres danych: '+(OK.od||'')+' – '+(OK.do||'')+'\n\n'
+    +'Co jest nie tak (proszę opisać):\n\n\n'
+    +'Dane kontaktowe do odpowiedzi:\n'
+   : 'Zgłaszam nieprawidłowość w danych.\n\nCzego dotyczy (ośrodek, powiat, liczba):\n\n\nCo jest nie tak:\n\n\nDane kontaktowe do odpowiedzi:\n';
+  return 'mailto:'+BLAD_MAIL+'?subject='+encodeURIComponent(t)+'&body='+encodeURIComponent(b);
+}
 function OKRES(){return OK.od?'Dane: '+OK.zrodlo+' za okres '+OK.od+' – '+OK.do+'; wskaźnik liczony z pierwszych podejść.':''}
 function medInfo(org){const p=D.pow[org];return{v:p.medR,src:p.medSrc||'powiat',n:p.nR}}
 function medOpis(org){const m=medInfo(org);
@@ -387,6 +412,7 @@ function renderLocal(){
   document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{curOsk=D.osk[cur].find(x=>x[0]===b.dataset.pick);renderLocal();
     const el=document.querySelector('.doc');if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'start'})});
   renderDoc();
+  syncBlad();
 }
 
 /* ---------- karta ośrodka ---------- */
@@ -429,7 +455,7 @@ function renderDoc(){
   const sel=(id,val,opts)=>'<div class="seg" id="'+id+'" data-v="'+esc(val??'')+'">'+opts.map(o=>'<button type="button" data-val="'+o[0]+'" aria-pressed="'+(String(val??'')===o[0])+'">'+o[1]+'</button>').join('')+'</div>';
   const inp=(id,lab,val,type,cls,ph)=>'<div'+(cls?' class="'+cls+'"':'')+'><label for="'+id+'">'+lab+'</label><input type="'+(type||'text')+'" id="'+id+'" value="'+esc(val||'')+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'></div>';
   const warn=termCheck(l);
-  $('docbox').innerHTML='<p class="nm" style="margin:0 0 2px">'+esc(curOsk[1])+'</p><p class="sub" style="margin:0 0 14px">Nr rej. '+curOsk[0]+(mt.nip?' · NIP '+mt.nip:'')+' · '+(x?CATN[x.c]+' · poz. '+planPos(cur,curOsk[0])+' · kw. '+x.q:'poza planem')+'</p>'+
+  $('docbox').innerHTML='<p class="nm" style="margin:0 0 2px">'+esc(curOsk[1])+'</p><p class="sub" style="margin:0 0 14px">Nr rej. '+curOsk[0]+(mt.nip?' · NIP '+mt.nip:'')+' · '+(x?CATN[x.c]+' · poz. '+planPos(cur,curOsk[0])+' · kw. '+x.q:'poza planem')+' · <a class="bl" href="'+bladLink(curOsk)+'">zgłoś błąd w danych</a></p>'+
    '<div class="tools" style="margin:0 0 16px"><button class="primary" id="bZaw">Zawiadomienie o kontroli</button><button id="bUpo">Upoważnienie</button><button id="bChk">Checklista kontrolera</button><button id="bPro">Protokół kontroli</button><button id="bCmp">Porównywarka arkuszy</button><button id="bRap">Raport zwrotny dla ośrodka</button></div>'+
    (warn?'<p class="note" style="margin:0 0 14px">'+warn+'</p>':'')+
    instrHTML()+
@@ -1184,6 +1210,7 @@ $('orgq').onfocus=showList;$('orgq').oninput=()=>{$('orgclr').hidden=!$('orgq').
 $('orgq').onkeydown=e=>{if(e.key==='Enter'){const b=$('orglist').querySelector('[data-org]');if(b)b.click()}if(e.key==='Escape'){$('orglist').hidden=true}};
 $('orgclr').onclick=()=>{cur='';curOsk=null;$('orgq').value='';$('orglist').hidden=true;fillOrgans();renderRegional()};
 document.addEventListener('click',e=>{if(!e.target.closest('.picker'))$('orglist').hidden=true});
+syncBlad();
 $('planBtn').onclick=()=>{
   if(!cur){alert('Najpierw wybierz organ nadzoru.');return}
   if(!schedule(cur).length){alert('Plan jest pusty — zaznacz ośrodki w kolumnie „Plan”.');return}
